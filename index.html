@@ -391,15 +391,8 @@ document.getElementById("zoom-in").addEventListener("click",()=>svg.transition()
 document.getElementById("zoom-out").addEventListener("click",()=>svg.transition().duration(500).call(zoom.scaleBy,0.7));
 document.getElementById("reset-zoom").addEventListener("click",()=>svg.transition().duration(500).call(zoom.transform,d3.zoomIdentity));
 
-// 截图功能
+// ✅ 截图功能（进度条左侧圆角、右侧直线）
 document.getElementById("screenshot-btn").addEventListener("click", async ()=>{
-  //const prevTransform = transformState;
-
-  // 复原地图到初始位置
-  //gMain.transition().duration(0).attr("transform", d3.zoomIdentity);
-
-  await new Promise(r=>setTimeout(r,200)); // 等待渲染
-
   const svgNode = document.querySelector("#map");
   const progressContainer = document.getElementById("progress-container");
   const progressBar = document.getElementById("progress-bar");
@@ -435,7 +428,7 @@ document.getElementById("screenshot-btn").addEventListener("click", async ()=>{
     // 绘制SVG地图
     ctx.drawImage(img,0,0,svgWidth,svgHeight);
 
-    // 绘制圆角进度条
+    // 绘制进度条
     const progRect = progressContainer.getBoundingClientRect();
     const mapRect = svgNode.getBoundingClientRect();
     const x = (progRect.left - mapRect.left);
@@ -460,15 +453,29 @@ document.getElementById("screenshot-btn").addEventListener("click", async ()=>{
       ctx.fill();
     }
 
+    function roundLeftRect(ctx, x, y, w, h, r, fill){
+      ctx.beginPath();
+      ctx.moveTo(x+r, y);
+      ctx.lineTo(x + w, y);
+      ctx.lineTo(x + w, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+
     // 灰色背景
     roundRect(ctx,x,y,w,h,h/2,"#ccc");
 
-    // 填充条
+    // 填充条（左圆角、右直线）
     if(percent>0){
       const grad = ctx.createLinearGradient(x,0,x+w*percent/100,0);
       grad.addColorStop(0,"#ff9a9e");
       grad.addColorStop(1,"#fad0c4");
-      roundRect(ctx,x,y,w*percent/100,h,h/2,grad);
+      roundLeftRect(ctx, x, y, w*percent/100, h, h/2, grad);
     }
 
     // 文字
@@ -484,9 +491,6 @@ document.getElementById("screenshot-btn").addEventListener("click", async ()=>{
     a.download = "travel_map.png";
     a.href = canvas.toDataURL("image/png");
     a.click();
-
-    // 恢复用户缩放/平移状态
-    //gMain.transition().duration(0).attr("transform", `translate(${prevTransform.x},${prevTransform.y}) scale(${prevTransform.k})`);
   };
   img.src = url;
 });
@@ -535,6 +539,7 @@ window.addEventListener("orientationchange", () => {
 </script>
 </body>
 </html>
+
 
 
 
