@@ -393,10 +393,10 @@ document.getElementById("reset-zoom").addEventListener("click",()=>svg.transitio
 
 // 截图功能
 document.getElementById("screenshot-btn").addEventListener("click", async ()=>{
-  const prevTransform = transformState;
+  //const prevTransform = transformState;
 
   // 复原地图到初始位置
-  gMain.transition().duration(0).attr("transform", d3.zoomIdentity);
+  //gMain.transition().duration(0).attr("transform", d3.zoomIdentity);
 
   await new Promise(r=>setTimeout(r,200)); // 等待渲染
 
@@ -486,7 +486,7 @@ document.getElementById("screenshot-btn").addEventListener("click", async ()=>{
     a.click();
 
     // 恢复用户缩放/平移状态
-    gMain.transition().duration(0).attr("transform", `translate(${prevTransform.x},${prevTransform.y}) scale(${prevTransform.k})`);
+    //gMain.transition().duration(0).attr("transform", `translate(${prevTransform.x},${prevTransform.y}) scale(${prevTransform.k})`);
   };
   img.src = url;
 });
@@ -535,5 +535,6 @@ window.addEventListener("orientationchange", () => {
 </script>
 </body>
 </html>
+
 
 
