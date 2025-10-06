@@ -79,17 +79,16 @@ h1 { text-align:center; margin-bottom:10px; }
 <script>
 const svg = d3.select("#map");
 const tooltip = document.getElementById("tooltip");
-const width = svg.node().clientWidth;
-const height = svg.node().clientHeight;
+let width = svg.node().clientWidth;
+let height = svg.node().clientHeight;
 
-const projection = d3.geoMercator().scale(130).translate([width/2,height/1.5]);
-const path = d3.geoPath().projection(projection);
+let projection = d3.geoMercator().scale(130).translate([width/2,height/1.5]);
+let path = d3.geoPath().projection(projection);
 
 let visited = {};
 let countriesData = [];
 let totalCountries = 0;
 const SMALL_COUNTRY_AREA_THRESHOLD = 30;
-
 
 const countryNameMap = {
   "United States of America": "美国",
@@ -300,9 +299,6 @@ const countryNameMap = {
   "United Arab Emirates": "阿联酋",
   "United Kingdom": "英国",
   "United States of America": "美国"};
- 
-
-
 const gMain = svg.append("g");
 
 d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json").then(worldData=>{
@@ -494,6 +490,27 @@ document.getElementById("screenshot-btn").addEventListener("click", async ()=>{
   };
   img.src = url;
 });
+
+
+// ✅ 新增功能：当手机横竖屏切换时，地图自动居中和缩放适应
+window.addEventListener("orientationchange", ()=>{
+  setTimeout(()=>{
+    width = svg.node().clientWidth;
+    height = svg.node().clientHeight;
+    projection = d3.geoMercator().scale(130).translate([width/2, height/1.5]);
+    path = d3.geoPath().projection(projection);
+    gMain.selectAll("path").attr("d", path);
+    gMain.selectAll(".dot").attr("cx", d=>{
+      const match = countriesData.find(c=>c.id===d3.select(this).attr("data-id"));
+      return match?path.centroid(match)[0]:d3.select(this).attr("cx");
+    }).attr("cy", d=>{
+      const match = countriesData.find(c=>c.id===d3.select(this).attr("data-id"));
+      return match?path.centroid(match)[1]:d3.select(this).attr("cy");
+    });
+    svg.transition().duration(800).call(zoom.transform, d3.zoomIdentity);
+  }, 400);
+});
 </script>
 </body>
 </html>
+
