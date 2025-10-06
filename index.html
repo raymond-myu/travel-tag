@@ -81,12 +81,6 @@ const svg = d3.select("#map");
 const tooltip = document.getElementById("tooltip");
 let width = svg.node().clientWidth;
 let height = svg.node().clientHeight;
-
-// ✅ 横竖屏自适应初值
-//let isLandscape = window.matchMedia("(orientation: landscape)").matches;
-//let initScale = isLandscape ? 100 : 120;       // 横屏缩小一些
-//let initTranslateY = isLandscape ? height/1.8 : height/1.5; // 横屏稍微向上
-//let projection = d3.geoMercator().scale(initScale).translate([width/2, initTranslateY]);
 let projection = d3.geoMercator().scale(130).translate([width/2,height/1.5]);
 let path = d3.geoPath().projection(projection);
 
@@ -539,6 +533,7 @@ window.addEventListener("orientationchange", () => {
 </script>
 </body>
 </html>
+
 
 
 
