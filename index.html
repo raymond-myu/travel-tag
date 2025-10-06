@@ -83,7 +83,7 @@ let width = svg.node().clientWidth;
 let height = svg.node().clientHeight;
 
 // ✅ 横竖屏自适应初值
-let isLandscape = width > height;
+let isLandscape = window.matchMedia("(orientation: landscape)").matches;
 let initScale = isLandscape ? 100 : 120;       // 横屏缩小一些
 let initTranslateY = isLandscape ? height/1.8 : height/1.5; // 横屏稍微向上
   
@@ -539,6 +539,7 @@ window.addEventListener("orientationchange", () => {
 </script>
 </body>
 </html>
+
 
 
 
