@@ -504,8 +504,8 @@ window.addEventListener("orientationchange", () => {
     const isLandscape = window.matchMedia("(orientation: landscape)").matches;
 
     // 横竖屏使用不同的比例
-    const scaleValue = isLandscape ? 100 : 130; // 横屏时缩小地图
-    const translateY = isLandscape ? height / 4 : height / 3;
+    const scaleValue = isLandscape ? 100 : 120; // 横屏时缩小地图
+    const translateY = isLandscape ? height / 1.8 : height / 1.5;
 
     projection = d3.geoMercator()
       .scale(scaleValue)
@@ -535,4 +535,5 @@ window.addEventListener("orientationchange", () => {
 </script>
 </body>
 </html>
+
 
