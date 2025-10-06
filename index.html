@@ -491,7 +491,16 @@ document.getElementById("screenshot-btn").addEventListener("click", async ()=>{
   img.src = url;
 });
 
+// ✅ 判断是否横屏
+const isLandscape = window.matchMedia("(orientation: landscape)").matches;
 
+// ✅ 根据横屏/竖屏调整地图初始缩放比例
+const initialScale = isLandscape ? 100 : 100;  
+// 横屏时地图缩小一点（比如从130变100，可根据效果微调）
+
+projection = d3.geoMercator()
+  .scale(initialScale)
+  .translate([width / 2, height / 1.5]); // 竖屏和横屏都可以共用
 
 
 // ✅ 新增功能：当手机横竖屏切换时，地图自动居中并调整大小
@@ -535,6 +544,7 @@ window.addEventListener("orientationchange", () => {
 </script>
 </body>
 </html>
+
 
 
 
