@@ -1,95 +1,170 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>我的旅行足迹地图</title>
 <style>
-body { font-family:'Segoe UI',sans-serif; margin:0; padding:20px; background:#f5f7fa; }
-h1 { text-align:center; margin-bottom:10px; }
-#search-container { width:100%; max-width:550px; margin:0 auto 10px; display:flex; gap:5px; }
-#search-input { flex:1; padding:6px 10px; border-radius:4px; border:1px solid #ccc; font-size:16px; }
-#search-btn, #reset-btn, #screenshot-btn { padding:6px 10px; border:none; border-radius:4px; color:white; cursor:pointer; font-size:16px; }
-#search-btn { background:#3498db; }
-#reset-btn { background:#e74c3c; }
-#screenshot-btn { background:#2ecc71; }
-#reset-btn:hover { background:#c0392b; }
-#search-btn:hover { background:#2980b9; }
-#screenshot-btn:hover { background:#27ae60; }
+  body { font-family:'Segoe UI',sans-serif; margin:0; padding:20px; background:#f5f7fa; }
+  h1 { text-align:center; margin-bottom:10px; }
+  #search-container { width:100%; max-width:650px; margin:0 auto 10px; display:flex; gap:5px; }
+  #search-input { flex:1; padding:6px 10px; border-radius:4px; border:1px solid #ccc; font-size:16px; }
+  #search-btn, #reset-btn, #screenshot-btn { padding:6px 10px; border:none; border-radius:4px; color:white; cursor:pointer; font-size:16px; }
+  #search-btn { background:#3498db; }
+  #reset-btn { background:#e74c3c; }
+  #screenshot-btn { background:#2ecc71; }
+  #reset-btn:hover { background:#c0392b; }
+  #search-btn:hover { background:#2980b9; }
+  #screenshot-btn:hover { background:#27ae60; }
 
-#map-container { position:relative; width:100%; max-width:1200px; margin:0 auto; overflow:hidden; }
-#map { width:100%; height:600px; border:1px solid #ccc; border-radius:8px; background:#dde6f0; }
+  #map-container { position:relative; width:100%; max-width:1200px; margin:0 auto; overflow:hidden; }
+  #map { width:100%; height:600px; border:1px solid #ccc; border-radius:8px; background:#dde6f0; display:block; }
 
-#progress-container {
-  position:absolute;
-  top:10px;
-  left:50%;
-  transform:translateX(-50%);
-  width:60%;
-  height:25px;
-  background:#ccc;
-  border-radius:12px;
-  overflow:hidden;
-  z-index:1000;
-}
-#progress-bar { height:100%; width:0%; background:linear-gradient(90deg,#ff9a9e,#fad0c4); border-radius:12px 0 0 12px; transition:width 0.5s ease; }
-#progress-text {
-  position:absolute;
-  top:0; left:0; width:100%; height:25px;
-  text-align:center;
-  line-height:25px;
-  font-weight:bold;
-  color:#000;
-  pointer-events:none;
-}
+  #progress-container {
+    position:absolute;
+    top:10px;
+    left:50%;
+    transform:translateX(-50%);
+    width:60%;
+    height:25px;
+    background:#ccc;
+    border-radius:12px;
+    overflow:hidden;
+    z-index:1000;
+  }
+  #progress-bar { height:100%; width:0%; background:linear-gradient(90deg,#ff9a9e,#fad0c4); border-radius:12px 0 0 12px; transition:width 0.5s ease; }
+  #progress-text {
+    position:absolute;
+    top:0; left:0; width:100%; height:25px;
+    text-align:center;
+    line-height:25px;
+    font-weight:bold;
+    color:#000;
+    pointer-events:none;
+  }
 
-.zoom-controls { position:absolute; top:50px; right:10px; display:flex; flex-direction:column; background:rgba(255,255,255,0.8); border-radius:5px; box-shadow:0 2px 6px rgba(0,0,0,0.3); overflow:hidden; z-index:1000; }
-.zoom-controls button { border:none; background:#fff; padding:8px 12px; cursor:pointer; font-size:18px; line-height:1; border-bottom:1px solid #ccc; }
-.zoom-controls button:last-child { border-bottom:none; }
-.zoom-controls button:hover { background:#f0f0f0; }
+  .zoom-controls { position:absolute; top:50px; right:10px; display:flex; flex-direction:column; background:rgba(255,255,255,0.8); border-radius:5px; box-shadow:0 2px 6px rgba(0,0,0,0.3); overflow:hidden; z-index:1000; }
+  .zoom-controls button { border:none; background:#fff; padding:8px 12px; cursor:pointer; font-size:18px; line-height:1; border-bottom:1px solid #ccc; }
+  .zoom-controls button:last-child { border-bottom:none; }
+  .zoom-controls button:hover { background:#f0f0f0; }
 
-.tooltip { position:absolute; background:rgba(0,0,0,0.7); color:white; padding:5px 10px; border-radius:4px; pointer-events:none; opacity:0; transition:opacity 0.3s; z-index:1000; }
-.dot { pointer-events:none; }
+  .tooltip { position:absolute; background:rgba(0,0,0,0.7); color:white; padding:5px 10px; border-radius:4px; pointer-events:none; opacity:0; transition:opacity 0.15s; z-index:1000; }
+  .dot { pointer-events:none; }
+
+  /* 切换世界/美国滑块 */
+  .map-toggle {
+    position: absolute;
+    top: 50px;
+    left: 10px;
+    z-index: 1001;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    user-select:none;
+    font-weight:600;
+    color:#333;
+    background: rgba(255,255,255,0.9);
+    padding:6px 8px;
+    border-radius:8px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.08);
+  }
+  .switch { position: relative; width:56px; height:28px; }
+  .switch input { display:none; }
+  .slider {
+    position:absolute; inset:0;
+    background:#97aba2;
+    border-radius:28px;
+    transition: .25s;
+  }
+  .slider:before {
+    content:"";
+    position:absolute;
+    width:22px; height:22px;
+    left:3px; top:3px;
+    background:white;
+    border-radius:50%;
+    transition:.25s;
+  }
+  .switch input:checked + .slider { background:#2ecc71; } /* 当切到美国，条显示绿色（你之前要求世界侧是绿？此处绿表示切换状态） */
+  .switch input:checked + .slider:before { transform: translateX(28px); }
+
+  @media (max-width:640px){
+    #map { height:480px; }
+    #progress-container { width:85%; }
+  }
 </style>
 </head>
 <body>
-<h1>我的旅行足迹地图</h1>
-<div id="search-container">
-  <input id="search-input" placeholder="输入国家或地区名搜索">
-  <button id="search-btn">搜索</button>
-  <button id="reset-btn">重置</button>
-  <button id="screenshot-btn">截图</button>
-</div>
-<div id="map-container">
-  <svg id="map"></svg>
-  <div id="progress-container">
-    <div id="progress-bar"></div>
-    <div id="progress-text">已访问国家和地区: 0 / 0 (0%)</div>
+  <h1 id="page-title">我的旅行足迹地图</h1>
+
+  <div id="search-container">
+    <input id="search-input" placeholder="输入国家或地区名搜索">
+    <button id="search-btn">搜索</button>
+    <button id="reset-btn">重置</button>
+    <button id="screenshot-btn">截图</button>
   </div>
-  <div class="zoom-controls">
-    <button id="zoom-in">+</button>
-    <button id="zoom-out">−</button>
-    <button id="reset-zoom">⟳</button>
+
+  <div id="map-container">
+    <svg id="map"></svg>
+
+    <div id="progress-container">
+      <div id="progress-bar"></div>
+      <div id="progress-text">已访问国家和地区: 0 / 0 (0%)</div>
+    </div>
+
+    <div class="zoom-controls">
+      <button id="zoom-in">+</button>
+      <button id="zoom-out">−</button>
+      <button id="reset-zoom">⟳</button>
+    </div>
+
+    <div class="map-toggle">
+      <span id="toggle-label-left">世界</span>
+      <label class="switch">
+        <input type="checkbox" id="map-switch" />
+        <span class="slider"></span>
+      </label>
+      <span id="toggle-label-right">美国</span>
+    </div>
   </div>
-</div>
-<div class="tooltip" id="tooltip"></div>
+
+  <div class="tooltip" id="tooltip"></div>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="https://unpkg.com/topojson-client@3"></script>
 <script>
+/*
+ 合并说明
+ - currentMap: 'world' | 'us'
+ - world uses geoMercator with world-atlas
+ - us uses geoAlbersUsa with us-atlas
+ - visited sets kept separate: visitedWorld, visitedUS
+ - switching redraws map, updates title, placeholder, progress text, totals
+ - clicking or searching toggles visited for the current map
+ - screenshot will capture the current SVG and draw progress bar as before
+*/
+
 const svg = d3.select("#map");
 const tooltip = document.getElementById("tooltip");
 let width = svg.node().clientWidth;
 let height = svg.node().clientHeight;
 
-let projection = d3.geoMercator().scale(130).translate([width/2,height/1.5]);
+let projection = d3.geoMercator().scale(130).translate([width/2, height/1.5]);
 let path = d3.geoPath().projection(projection);
 
-let visited = {};
-let countriesData = [];
-let totalCountries = 0;
-const SMALL_COUNTRY_AREA_THRESHOLD = 30;
+let currentMap = 'world'; // 可改为 'us' 默认打开美国（你之前默认世界，我这里默认世界）
+const SMALL_AREA_THRESHOLD = 30;
 
+// Data holders
+let worldCountries = [];
+let usStates = [];
+
+// visited stores
+const visitedWorld = {}; // keys: country id
+const visitedUS = {};    // keys: state id (string)
+let totalWorld = 0, totalUS = 0;
+
+// name maps (中文显示)
 const countryNameMap = {
   "United States of America": "美国",
   "Canada": "加拿大",
@@ -299,100 +374,304 @@ const countryNameMap = {
   "United Arab Emirates": "阿联酋",
   "United Kingdom": "英国",
   "United States of America": "美国"};
+
+const stateNameMap = {
+"Alabama":"阿拉巴马","Alaska":"阿拉斯加","Arizona":"亚利桑那","Arkansas":"阿肯色",
+"California":"加利福尼亚","Colorado":"科罗拉多","Connecticut":"康涅狄格","Delaware":"特拉华",
+"Florida":"佛罗里达","Georgia":"乔治亚","Hawaii":"夏威夷","Idaho":"爱达荷",
+"Illinois":"伊利诺伊","Indiana":"印第安纳","Iowa":"爱荷华","Kansas":"堪萨斯",
+"Kentucky":"肯塔基","Louisiana":"路易斯安那","Maine":"缅因","Maryland":"马里兰",
+"Massachusetts":"马萨诸塞","Michigan":"密歇根","Minnesota":"明尼苏达","Mississippi":"密西西比",
+"Missouri":"密苏里","Montana":"蒙大拿","Nebraska":"内布拉斯加","Nevada":"内华达",
+"New Hampshire":"新罕布什尔","New Jersey":"新泽西","New Mexico":"新墨西哥","New York":"纽约",
+"North Carolina":"北卡罗来纳","North Dakota":"北达科他","Ohio":"俄亥俄","Oklahoma":"俄克拉荷马",
+"Oregon":"俄勒冈","Pennsylvania":"宾夕法尼亚","Rhode Island":"罗德岛","South Carolina":"南卡罗来纳",
+"South Dakota":"南达科他","Tennessee":"田纳西","Texas":"德克萨斯","Utah":"犹他",
+"Vermont":"佛蒙特","Virginia":"弗吉尼亚","Washington":"华盛顿州","West Virginia":"西弗吉尼亚",
+"Wisconsin":"威斯康星","Wyoming":"怀俄明","District of Columbia":"华盛顿特区"
+};
+
 const gMain = svg.append("g");
 
-d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json").then(worldData=>{
-  countriesData = topojson.feature(worldData, worldData.objects.countries).features;
-  totalCountries = countriesData.length;
+// zoom handling reused
+let transformState = d3.zoomIdentity;
+const zoom = d3.zoom().scaleExtent([0.5, 10]).on("zoom", event=>{
+  transformState = event.transform;
+  gMain.attr("transform", `translate(${transformState.x},${transformState.y}) scale(${transformState.k})`);
+});
+svg.call(zoom);
 
-  gMain.selectAll("path")
-    .data(countriesData)
-    .enter()
-    .append("path")
-    .attr("d", path)
-    .attr("class","country")
-    .attr("fill","#b0c4de")
-    .attr("stroke","#7f8c8d")
-    .attr("stroke-width",0.5)
-    .on("click",(event,d)=>toggleCountry(d.id.toString(),d))
-    .on("mouseover",(event,d)=>{
-      const name = countryNameMap[d.properties.name]||d.properties.name||"Unknown";
-      tooltip.innerHTML=name;
-      tooltip.style.opacity=1;
-      tooltip.style.left=event.pageX+10+"px";
-      tooltip.style.top=event.pageY-30+"px";
-    })
-    .on("mouseout",()=>{tooltip.style.opacity=0;});
+// --- Load both datasets upfront ---
+Promise.all([
+  d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json"),
+  d3.json("https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json")
+]).then(([worldData, usData])=>{
+  worldCountries = topojson.feature(worldData, worldData.objects.countries).features;
+  totalWorld = worldCountries.length;
 
-  updateProgress();
+  usStates = topojson.feature(usData, usData.objects.states).features;
+
+  // add DC (approx polygon) so we can toggle it similarly
+  const dcData = {
+    type: "Feature",
+    id: "51",
+    properties: { name: "District of Columbia" },
+    geometry: {
+      type: "Polygon",
+      coordinates: [[
+        [-77.119759,38.995548],[-76.909393,38.89511],[-77.03326,38.791645],[-77.117631,38.798526],[-77.119759,38.995548]
+      ]]
+    }
+  };
+  usStates.push(dcData);
+  totalUS = 51; //usStates.length; // includes DC
+
+  // initial render for currentMap
+  renderCurrentMap();
+  updateProgressUI();
+}).catch(err=>{
+  console.error("数据加载失败：", err);
+  alert("地图数据加载失败，检查网络或控制台错误。");
 });
 
-function toggleCountry(id,d){
-  const isSmall = path.area(d)<SMALL_COUNTRY_AREA_THRESHOLD;
-  if(visited[id]){
-    delete visited[id];
+// ---- Render function (draws either world or us) ----
+function renderCurrentMap(){
+  // clear existing
+  gMain.selectAll("*").remove();
+  updateProgressUI();
+  // ensure projection / path correct for map
+  if(currentMap === 'world'){
+    projection = d3.geoMercator().scale(130).translate([width/2, height/1.5]);
+    path = d3.geoPath().projection(projection);
+
+    // draw countries
+    gMain.selectAll("path")
+      .data(worldCountries)
+      .enter()
+      .append("path")
+      .attr("d", path)
+      .attr("class","country")
+      .attr("fill", d => visitedWorld[d.id] ? "#ff69b4" : "#b0c4de")
+      .attr("stroke", "#7f8c8d")
+      .attr("stroke-width", 0.5)
+      .on("click", (event,d)=>{ toggleWorldCountry(d.id.toString(), d); })
+      .on("mouseover", (event,d)=> {
+        const name = countryNameMap[d.properties.name] || d.properties.name || "Unknown";
+        tooltip.innerHTML = name;
+        tooltip.style.opacity = 1;
+        tooltip.style.left = event.pageX + 10 + "px";
+        tooltip.style.top = event.pageY - 26 + "px";
+      })
+      .on("mouseout", ()=>{ tooltip.style.opacity = 0; });
+
+    // small dots for previously visited small features (recompute centroids)
+    gMain.selectAll(".dot")
+      .data(Object.keys(visitedWorld))
+      .enter()
+      .append("circle")
+      .attr("class","dot")
+      .attr("data-id", d=>d)
+      .each(function(id){
+        const match = worldCountries.find(c=>c.id.toString()===id.toString());
+        if(match){
+          const [cx,cy] = path.centroid(match);
+          d3.select(this).attr("cx",cx).attr("cy",cy);
+        }
+      })
+      .attr("r",4)
+      .attr("fill","#ff69b4");
+
+    // update title/placeholder/progress text
+    document.getElementById("page-title").textContent = "我的旅行足迹地图（世界）";
+    document.getElementById("search-input").placeholder = "输入国家或地区名搜索";
+    document.getElementById("progress-text").textContent = `已访问国家和地区: ${Object.keys(visitedWorld).length} / ${totalWorld} (${ Math.round(Object.keys(visitedWorld).length/Math.max(1,totalWorld)*100) }%)`;
+  } else {
+    // US map
+    projection = d3.geoAlbersUsa().scale(1000).translate([width/2, height/2]);
+    path = d3.geoPath().projection(projection);
+
+    gMain.selectAll("path")
+      .data(usStates)
+      .enter()
+      .append("path")
+      .attr("d", path)
+      .attr("class","state")
+      .attr("fill", d => visitedUS[d.id] ? "#ff69b4" : "#b0c4de")
+      .attr("stroke","#7f8c8d")
+      .attr("stroke-width",0.5)
+      .on("click",(event,d)=>{ toggleUSState(d.id.toString(), d); })
+      .on("mouseover",(event,d)=>{
+        const name = stateNameMap[d.properties.name] || d.properties.name || "Unknown";
+        tooltip.innerHTML = name;
+        tooltip.style.opacity = 1;
+        tooltip.style.left = event.pageX + 10 + "px";
+        tooltip.style.top = event.pageY - 26 + "px";
+      })
+      .on("mouseout", ()=>{ tooltip.style.opacity = 0; });
+
+    // dots for tiny states if any (rare for US)
+    gMain.selectAll(".dot")
+      .data(Object.keys(visitedUS))
+      .enter()
+      .append("circle")
+      .attr("class","dot")
+      .attr("data-id", d=>d)
+      .each(function(id){
+        const match = usStates.find(s=>s.id.toString()===id.toString());
+        if(match){
+          const [cx,cy] = path.centroid(match);
+          d3.select(this).attr("cx",cx).attr("cy",cy);
+        }
+      })
+      .attr("r",4)
+      .attr("fill","#ff69b4");
+
+    document.getElementById("page-title").textContent = "我的旅行足迹地图（美国）";
+    document.getElementById("search-input").placeholder = "输入州或地区名搜索";
+    document.getElementById("progress-text").textContent = `已访问州和地区: ${Object.keys(visitedUS).length} / ${totalUS} (${ Math.round(Object.keys(visitedUS).length/Math.max(1,totalUS)*100) }%)`;
+  }
+
+  //updateProgressUI();
+}
+
+// --- Toggle handlers for world / us ---
+function toggleWorldCountry(id,d){
+  const isSmall = path.area(d) < SMALL_AREA_THRESHOLD;
+  if(visitedWorld[id]){
+    delete visitedWorld[id];
     if(isSmall){
       gMain.selectAll(".dot").filter(function(){ return d3.select(this).attr("data-id")===id; }).remove();
     } else {
-      gMain.selectAll("path").filter(dd=>dd.id===id).attr("fill","#b0c4de");
+      gMain.selectAll("path").filter(dd=>dd.id==d.id).attr("fill","#b0c4de");
     }
   } else {
-    visited[id]=true;
+    visitedWorld[id] = true;
     if(isSmall){
       const [cx,cy] = path.centroid(d);
       gMain.append("circle").attr("class","dot").attr("data-id",id).attr("cx",cx).attr("cy",cy).attr("r",4).attr("fill","#ff69b4");
     } else {
-      gMain.selectAll("path").filter(dd=>dd.id===id).attr("fill","#ff69b4");
+      gMain.selectAll("path").filter(dd=>dd.id==d.id).attr("fill","#ff69b4");
     }
   }
-  updateProgress();
+  updateProgressUI();
 }
 
-function updateProgress(){
-  const count = Object.keys(visited).length;
-  const percent = totalCountries>0?Math.round(count/totalCountries*100):0;
-  document.getElementById("progress-bar").style.width=percent+"%";
-  document.getElementById("progress-text").textContent=`已访问国家和地区: ${count} / ${totalCountries} (${percent}%)`;
+function toggleUSState(id,d){
+  const isSmall = path.area(d) < SMALL_AREA_THRESHOLD;
+  if(visitedUS[id]){
+    delete visitedUS[id];
+    if(isSmall){
+      gMain.selectAll(".dot").filter(function(){ return d3.select(this).attr("data-id")===id; }).remove();
+    } else {
+      gMain.selectAll("path").filter(dd=>dd.id==d.id).attr("fill","#b0c4de");
+    }
+  } else {
+    visitedUS[id] = true;
+    if(isSmall){
+      const [cx,cy] = path.centroid(d);
+      gMain.append("circle").attr("class","dot").attr("data-id",id).attr("cx",cx).attr("cy",cy).attr("r",4).attr("fill","#ff69b4");
+    } else {
+      gMain.selectAll("path").filter(dd=>dd.id==d.id).attr("fill","#ff69b4");
+    }
+  }
+  updateProgressUI();
 }
 
+// update progress UI depending on current map
+function updateProgressUI(){
+  if(currentMap === 'world'){
+    const visitedCount = Object.keys(visitedWorld).length;
+    const percent = Math.round((visitedCount / Math.max(1, totalWorld)) * 100);
+    document.getElementById("page-title").textContent = "我的旅行足迹地图（世界）";
+    document.getElementById("search-input").placeholder = "输入国家或地区名搜索";
+    document.getElementById("progress-text").textContent =
+      `已访问国家和地区: ${visitedCount} / ${totalWorld} (${percent}%)`;
+    document.getElementById("progress-bar").style.width = percent + "%";
+  } else {
+     const visitedCount = Object.keys(visitedUS).length;
+    const percent = Math.round((visitedCount / Math.max(1, totalUS)) * 100);
+    document.getElementById("page-title").textContent = "我的旅行足迹地图（美国）";
+    document.getElementById("search-input").placeholder = "输入州名搜索";
+    document.getElementById("progress-text").textContent =
+      `已访问州和地区: ${visitedCount} / ${totalUS} (${percent}%)`;
+    document.getElementById("progress-bar").style.width = percent + "%";
+  }
+}
+
+// --- Switch control (world <-> us) ---
+document.getElementById("map-switch").addEventListener("change", function(){
+  const checked = this.checked;
+  currentMap = checked ? 'us' : 'world';
+  // when switching, adjust width/height/projection and redraw
+  width = svg.node().clientWidth;
+  height = svg.node().clientHeight;
+  renderCurrentMap();
+  updateProgressUI();       // 强制刷新进度条和文本
+  // reset zoom transform visually to identity for new map
+  svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity);
+});
+
+// --- Search ---
 function doSearch(){
-  const query = document.getElementById("search-input").value.trim().toLowerCase();
-  if(!query) return;
-  const match = countriesData.find(d=>{
-    const en=(d.properties.name||"").toLowerCase();
-    const zh=(countryNameMap[d.properties.name]||"").toLowerCase();
-    return en.includes(query)||zh.includes(query);
-  });
-  if(match) toggleCountry(match.id.toString(),match);
-  else alert("未找到国家或地区，请用英文名称搜索："+query);
+  const q = document.getElementById("search-input").value.trim().toLowerCase();
+  if(!q) return;
+
+  if(currentMap === 'world'){
+    // search by english name or mapped chinese
+    const match = worldCountries.find(d=>{
+      const en = (d.properties.name||"").toLowerCase();
+      const zh = (countryNameMap[d.properties.name]||"").toLowerCase();
+      return en.includes(q) || zh.includes(q);
+    });
+    if(match){
+      toggleWorldCountry(match.id.toString(), match);
+      // zoom to match centroid (smooth)
+      const c = path.centroid(match);
+      if(c && !isNaN(c[0]) && !isNaN(c[1])){
+        svg.transition().duration(700).call(zoom.transform, d3.zoomIdentity.translate(width/2 - c[0]*1, height/2 - c[1]*1).scale(1));
+      }
+    } else {
+      alert("未找到国家或地区，请用正确英文或已映射中文名称搜索：" + q);
+    }
+  } else {
+    const match = usStates.find(d=>{
+      const en = (d.properties.name||"").toLowerCase();
+      const zh = (stateNameMap[d.properties.name]||"").toLowerCase();
+      return en.includes(q) || zh.includes(q);
+    });
+    if(match){
+      toggleUSState(match.id.toString(), match);
+      const c = path.centroid(match);
+      if(c && !isNaN(c[0]) && !isNaN(c[1])){
+        svg.transition().duration(700).call(zoom.transform, d3.zoomIdentity.translate(width/2 - c[0]*1, height/2 - c[1]*1).scale(1.5));
+      }
+    } else {
+      alert("未找到州或地区，请用正确英文或映射中文名称搜索：" + q);
+    }
+  }
 }
+document.getElementById("search-btn").addEventListener("click", doSearch);
+document.getElementById("search-input").addEventListener("keydown", e=>{ if(e.key === "Enter") doSearch(); });
 
-document.getElementById("search-btn").addEventListener("click",doSearch);
-document.getElementById("search-input").addEventListener("keydown",e=>{if(e.key==="Enter")doSearch();});
-
+// --- Reset button ---
 document.getElementById("reset-btn").addEventListener("click", ()=>{
-  visited = {};
-  gMain.selectAll("path").attr("fill","#b0c4de");
-  gMain.selectAll(".dot").remove();
-  updateProgress();
+  if(currentMap === 'world'){
+    for(const k in visitedWorld) delete visitedWorld[k];
+  } else {
+    for(const k in visitedUS) delete visitedUS[k];
+  }
+  renderCurrentMap();
   document.getElementById("search-input").value = "";
 });
 
-// 缩放控制
-let transformState = d3.zoomIdentity;
-const zoom = d3.zoom()
-  .scaleExtent([0.5,10])
-  .on("zoom", event=>{
-    transformState = event.transform;
-    gMain.attr("transform",`translate(${transformState.x},${transformState.y}) scale(${transformState.k})`);
-  });
-svg.call(zoom);
-document.getElementById("zoom-in").addEventListener("click",()=>svg.transition().duration(500).call(zoom.scaleBy,1.5));
-document.getElementById("zoom-out").addEventListener("click",()=>svg.transition().duration(500).call(zoom.scaleBy,0.7));
-document.getElementById("reset-zoom").addEventListener("click",()=>svg.transition().duration(500).call(zoom.transform,d3.zoomIdentity));
+// --- Zoom controls ---
+document.getElementById("zoom-in").addEventListener("click", ()=> svg.transition().duration(500).call(zoom.scaleBy, 1.5));
+document.getElementById("zoom-out").addEventListener("click", ()=> svg.transition().duration(500).call(zoom.scaleBy, 0.7));
+document.getElementById("reset-zoom").addEventListener("click", ()=> svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity));
 
-// ✅ 截图功能（进度条左侧圆角、右侧直线）
+// --- Screenshot (captures current SVG + draws rounded progress bar like original) ---
 document.getElementById("screenshot-btn").addEventListener("click", async ()=>{
+  await new Promise(r=>setTimeout(r,200));
   const svgNode = document.querySelector("#map");
   const progressContainer = document.getElementById("progress-container");
   const progressBar = document.getElementById("progress-bar");
@@ -406,7 +685,6 @@ document.getElementById("screenshot-btn").addEventListener("click", async ()=>{
   if(!source.match(/^<svg[^>]+"http:\/\/www\.w3\.org\/1999\/xlink"/)){
     source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
   }
-
   const svgWidth = svgNode.clientWidth;
   const svgHeight = svgNode.clientHeight;
   source = source.replace('<svg', `<svg width="${svgWidth}" height="${svgHeight}"`);
@@ -414,21 +692,20 @@ document.getElementById("screenshot-btn").addEventListener("click", async ()=>{
   const img = new Image();
   const svgBlob = new Blob([source], {type:"image/svg+xml;charset=utf-8"});
   const url = URL.createObjectURL(svgBlob);
-
   img.onload = function(){
     const canvas = document.createElement("canvas");
     canvas.width = svgWidth;
     canvas.height = svgHeight;
     const ctx = canvas.getContext("2d");
 
-    // 背景
+    // background
     ctx.fillStyle = "#dde6f0";
     ctx.fillRect(0,0,canvas.width,canvas.height);
 
-    // 绘制SVG地图
+    // draw SVG
     ctx.drawImage(img,0,0,svgWidth,svgHeight);
 
-    // 绘制进度条
+    // progress bar
     const progRect = progressContainer.getBoundingClientRect();
     const mapRect = svgNode.getBoundingClientRect();
     const x = (progRect.left - mapRect.left);
@@ -439,107 +716,103 @@ document.getElementById("screenshot-btn").addEventListener("click", async ()=>{
 
     function roundRect(ctx,x,y,w,h,r,fill){
       ctx.beginPath();
-      ctx.moveTo(x+r,y);
-      ctx.lineTo(x+w-r,y);
-      ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-      ctx.lineTo(x+w,y+h-r);
-      ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-      ctx.lineTo(x+r,y+h);
-      ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-      ctx.lineTo(x,y+r);
-      ctx.quadraticCurveTo(x,y,x+r,y);
+      ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+      ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+      ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+      ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
       ctx.closePath();
       ctx.fillStyle = fill;
       ctx.fill();
     }
 
-    function roundLeftRect(ctx, x, y, w, h, r, fill){
-      ctx.beginPath();
-      ctx.moveTo(x+r, y);
-      ctx.lineTo(x + w, y);
-      ctx.lineTo(x + w, y + h);
-      ctx.lineTo(x + r, y + h);
-      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-      ctx.lineTo(x, y + r);
-      ctx.quadraticCurveTo(x, y, x + r, y);
-      ctx.closePath();
-      ctx.fillStyle = fill;
-      ctx.fill();
-    }
-
-    // 灰色背景
+    // bg
     roundRect(ctx,x,y,w,h,h/2,"#ccc");
 
-    // 填充条（左圆角、右直线）
+    // progress fill (left rounded, right straight — keep same as your modified behavior)
     if(percent>0){
+      // draw left-rounded + straight-right shape
+      ctx.beginPath();
+      // left arc and top
+      ctx.moveTo(x + h/2, y);
+      ctx.lineTo(x + (w*percent/100), y);
+      ctx.lineTo(x + (w*percent/100), y + h);
+      ctx.lineTo(x + h/2, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - h/2);
+      ctx.lineTo(x, y + h/2);
+      ctx.quadraticCurveTo(x, y, x + h/2, y);
+      ctx.closePath();
       const grad = ctx.createLinearGradient(x,0,x+w*percent/100,0);
-      grad.addColorStop(0,"#ff9a9e");
-      grad.addColorStop(1,"#fad0c4");
-      roundLeftRect(ctx, x, y, w*percent/100, h, h/2, grad);
+      grad.addColorStop(0,"#ff9a9e"); grad.addColorStop(1,"#fad0c4");
+      ctx.fillStyle = grad;
+      ctx.fill();
     }
 
-    // 文字
+    // text
     ctx.fillStyle = "#000";
     ctx.font = `${Math.floor(h*0.6)}px sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(progressText.textContent, x+w/2, y+h/2);
+    ctx.fillText(progressText.textContent, x + w/2, y + h/2);
 
     URL.revokeObjectURL(url);
-
     const a = document.createElement("a");
-    a.download = "travel_map.png";
+    a.download = currentMap === 'world' ? "travel_map_world.png" : "travel_map_us.png";
     a.href = canvas.toDataURL("image/png");
     a.click();
   };
   img.src = url;
 });
 
-
-
-
-// ✅ 新增功能：当手机横竖屏切换时，地图自动居中并调整大小
-window.addEventListener("orientationchange", () => {
-  setTimeout(() => {
+// --- Orientation / resize handling ---
+window.addEventListener("orientationchange", ()=> {
+  setTimeout(()=> {
     width = svg.node().clientWidth;
     height = svg.node().clientHeight;
-
-    // 判断当前是否为横屏
+    // adjust projection scale a bit for landscape on mobile
     const isLandscape = window.matchMedia("(orientation: landscape)").matches;
-
-    // 横竖屏使用不同的比例
-    const scaleValue = isLandscape ? 100 : 120; // 横屏时缩小地图
-    const translateY = isLandscape ? height / 1.8 : height / 1.5;
-
-    projection = d3.geoMercator()
-      .scale(scaleValue)
-      .translate([width / 2, translateY]);
-
+    if(currentMap === 'world'){
+      projection = d3.geoMercator()
+        .scale(isLandscape ? 100 : 130)
+        .translate([width/2, isLandscape ? height/1.9 : height/1.5]);
+    } else {
+      projection = d3.geoAlbersUsa()
+        .scale(isLandscape ? 900 : 1000)
+        .translate([width/2, height/2]);
+    }
     path = d3.geoPath().projection(projection);
-
-    // 更新国家路径
     gMain.selectAll("path").attr("d", path);
-
-    // 更新小国家圆点位置
-    gMain.selectAll(".dot")
-      .each(function(d) {
-        const id = d3.select(this).attr("data-id");
-        const match = countriesData.find(c => c.id === id);
-        if (match) {
-          const [cx, cy] = path.centroid(match);
-          d3.select(this).attr("cx", cx).attr("cy", cy);
-        }
-      });
-
-    // 重置缩放状态
-    svg.transition().duration(800).call(zoom.transform, d3.zoomIdentity);
-  }, 400); // 等待屏幕旋转完成
+    gMain.selectAll(".dot").each(function(){
+      const id = d3.select(this).attr("data-id");
+      let match = null;
+      if(currentMap === 'world') match = worldCountries.find(c => c.id.toString()===id.toString());
+      else match = usStates.find(s => s.id.toString()===id.toString());
+      if(match){
+        const [cx,cy] = path.centroid(match);
+        d3.select(this).attr("cx",cx).attr("cy",cy);
+      }
+    });
+    svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
+  }, 300);
 });
+
+window.addEventListener("resize", ()=> {
+  width = svg.node().clientWidth;
+  height = svg.node().clientHeight;
+  // update projection and paths similar to orientationchange
+  if(currentMap === 'world'){
+    projection = d3.geoMercator().scale(130).translate([width/2, height/1.5]);
+  } else {
+    projection = d3.geoAlbersUsa().scale(1000).translate([width/2, height/2]);
+  }
+  path = d3.geoPath().projection(projection);
+  gMain.selectAll("path").attr("d", path);
+});
+
+// initial title and placeholder set
+document.getElementById("page-title").textContent = "我的旅行足迹地图";
+document.getElementById("search-input").placeholder = "输入国家或地区名搜索";
 
 </script>
 </body>
 </html>
-
-
-
 
