@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的旅行足迹地图</title>
+<style>
+body { font-family:'Segoe UI',sans-serif; margin:0; padding:20px; background:#f5f7fa; }
+h1 { text-align:center; margin-bottom:10px; }
+#search-container { width:100%; max-width:550px; margin:0 auto 10px; display:flex; gap:5px; }
+#search-input { flex:1; padding:6px 10px; border-radius:4px; border:1px solid #ccc; font-size:16px; }
+#search-btn, #reset-btn, #screenshot-btn { padding:6px 10px; border:none; border-radius:4px; color:white; cursor:pointer; font-size:16px; }
+#search-btn { background:#3498db; }
+#reset-btn { background:#e74c3c; }
+#screenshot-btn { background:#2ecc71; }
+#reset-btn:hover { background:#c0392b; }
+#search-btn:hover { background:#2980b9; }
+#screenshot-btn:hover { background:#27ae60; }
+
+#map-container { position:relative; width:100%; max-width:1200px; margin:0 auto; overflow:hidden; }
+#map { width:100%; height:600px; border:1px solid #ccc; border-radius:8px; background:#dde6f0; }
+
+#progress-container {
+  position:absolute;
+  top:10px;
+  left:50%;
+  transform:translateX(-50%);
+  width:60%;
+  height:25px;
+  background:#ccc;
+  border-radius:12px;
+  overflow:hidden;
+  z-index:1000;
+}
+#progress-bar { height:100%; width:0%; background:linear-gradient(90deg,#ff9a9e,#fad0c4); border-radius:12px 0 0 12px; transition:width 0.5s ease; }
+#progress-text {
+  position:absolute;
+  top:0; left:0; width:100%; height:25px;
+  text-align:center;
+  line-height:25px;
+  font-weight:bold;
+  color:#000;
+  pointer-events:none;
+}
+
+.zoom-controls { position:absolute; top:50px; right:10px; display:flex; flex-direction:column; background:rgba(255,255,255,0.8); border-radius:5px; box-shadow:0 2px 6px rgba(0,0,0,0.3); overflow:hidden; z-index:1000; }
+.zoom-controls button { border:none; background:#fff; padding:8px 12px; cursor:pointer; font-size:18px; line-height:1; border-bottom:1px solid #ccc; }
+.zoom-controls button:last-child { border-bottom:none; }
+.zoom-controls button:hover { background:#f0f0f0; }
+
+.tooltip { position:absolute; background:rgba(0,0,0,0.7); color:white; padding:5px 10px; border-radius:4px; pointer-events:none; opacity:0; transition:opacity 0.3s; z-index:1000; }
+.dot { pointer-events:none; }
+</style>
+</head>
+<body>
+<h1>我的旅行足迹地图</h1>
+<div id="search-container">
+  <input id="search-input" placeholder="输入国家或地区名搜索">
+  <button id="search-btn">搜索</button>
+  <button id="reset-btn">重置</button>
+  <button id="screenshot-btn">截图</button>
+</div>
+<div id="map-container">
+  <svg id="map"></svg>
+  <div id="progress-container">
+    <div id="progress-bar"></div>
+    <div id="progress-text">已访问国家和地区: 0 / 0 (0%)</div>
+  </div>
+  <div class="zoom-controls">
+    <button id="zoom-in">+</button>
+    <button id="zoom-out">−</button>
+    <button id="reset-zoom">⟳</button>
+  </div>
+</div>
+<div class="tooltip" id="tooltip"></div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://unpkg.com/topojson-client@3"></script>
+<script>
+const svg = d3.select("#map");
+const tooltip = document.getElementById("tooltip");
+let width = svg.node().clientWidth;
+let height = svg.node().clientHeight;
+
+let projection = d3.geoMercator().scale(130).translate([width/2,height/1.5]);
+let path = d3.geoPath().projection(projection);
+
+let visited = {};
+let countriesData = [];
+let totalCountries = 0;
+const SMALL_COUNTRY_AREA_THRESHOLD = 30;
+
+const countryNameMap = {
+  "United States of America": "美国",
+  "Canada": "加拿大",
+  "China": "中国",
+  "Hong Kong": "香港",
+  "Macau": "澳门",
+  "Taiwan": "台湾",
+  "France": "法国",
+  "United Kingdom": "英国",
+  "Germany": "德国",
+  "Japan": "日本",
+  "Russia": "俄罗斯",
+  "Brazil": "巴西",
+  "India": "印度",
+  "Australia": "澳大利亚",
+  "Italy": "意大利",
+  "Mexico": "墨西哥",
+  "South Africa": "南非",
+  "Egypt": "埃及",
+  "Spain": "西班牙",
+  "Sweden": "瑞典",
+  "Norway": "挪威",
+  "Argentina": "阿根廷",
+  "Saudi Arabia": "沙特阿拉伯",
+  "Afghanistan": "阿富汗",
+  "Albania": "阿尔巴尼亚",
+  "Algeria": "阿尔及利亚",
+  "Andorra": "安道尔",
+  "Angola": "安哥拉",
+  "Antigua and Barbuda": "安提瓜和巴布达",
+  "Argentina": "阿根廷",
+  "Armenia": "亚美尼亚",
+  "Australia": "澳大利亚",
+  "Austria": "奥地利",
+  "Azerbaijan": "阿塞拜疆",
+  "Bahamas": "巴哈马",
+  "Bahrain": "巴林",
+  "Bangladesh": "孟加拉国",
+  "Barbados": "巴巴多斯",
+  "Belarus": "白俄罗斯",
+  "Belgium": "比利时",
+  "Belize": "伯利兹",
+  "Benin": "贝宁",
+  "Bhutan": "不丹",
+  "Bolivia": "玻利维亚",
+  "Bosnia and Herzegovina": "波斯尼亚和黑塞哥维那",
+  "Botswana": "博茨瓦纳",
+  "Brazil": "巴西",
+  "Brunei Darussalam": "文莱达鲁萨兰国",
+  "Bulgaria": "保加利亚",
+  "Burkina Faso": "布基纳法索",
+  "Burundi": "布隆迪",
+  "Cabo Verde": "佛得角",
+  "Cambodia": "柬埔寨",
+  "Cameroon": "喀麦隆",
+  "Canada": "加拿大",
+  "Central African Republic": "中非共和国",
+  "Chad": "乍得",
+  "Chile": "智利",
+  "China": "中国",
+  "Colombia": "哥伦比亚",
+  "Comoros": "科摩罗",
+  "Congo (Congo-Brazzaville)": "刚果（布拉柴维尔）",
+  "Congo (Democratic Republic of the) (Congo-Kinshasa)": "刚果（金）",
+  "Costa Rica": "哥斯达黎加",
+  "Croatia": "克罗地亚",
+  "Cuba": "古巴",
+  "Cyprus": "塞浦路斯",
+  "Czech Republic": "捷克共和国",
+  "Denmark": "丹麦",
+  "Djibouti": "吉布提",
+  "Dominica": "多米尼加",
+  "Dominican Republic": "多米尼加共和国",
+  "Ecuador": "厄瓜多尔",
+  "Egypt": "埃及",
+  "El Salvador": "萨尔瓦多",
+  "Equatorial Guinea": "赤道几内亚",
+  "Eritrea": "厄立特里亚",
+  "Estonia": "爱沙尼亚",
+  "Eswatini": "斯威士兰",
+  "Ethiopia": "埃塞俄比亚",
+  "Fiji": "斐济",
+  "Finland": "芬兰",
+  "France": "法国",
+  "Gabon": "加蓬",
+  "Gambia": "冈比亚",
+  "Georgia": "格鲁吉亚",
+  "Germany": "德国",
+  "Ghana": "加纳",
+  "Greece": "希腊",
+  "Grenada": "格林纳达",
+  "Guatemala": "危地马拉",
+  "Guinea": "几内亚",
+  "Guinea-Bissau": "几内亚比绍",
+  "Guyana": "圭亚那",
+  "Haiti": "海地",
+  "Honduras": "洪都拉斯",
+  "Hungary": "匈牙利",
+  "Iceland": "冰岛",
+  "India": "印度",
+  "Indonesia": "印度尼西亚",
+  "Iran": "伊朗",
+  "Iraq": "伊拉克",
+  "Ireland": "爱尔兰",
+  "Israel": "以色列",
+  "Italy": "意大利",
+  "Jamaica": "牙买加",
+  "Japan": "日本",
+  "Jordan": "约旦",
+  "Kazakhstan": "哈萨克斯坦",
+  "Kenya": "肯尼亚",
+  "Kiribati": "基里巴斯",
+  "Korea (North)": "朝鲜",
+  "Korea (South)": "韩国",
+  "Kuwait": "科威特",
+  "Kyrgyzstan": "吉尔吉斯斯坦",
+  "Laos": "老挝",
+  "Latvia": "拉脱维亚",
+  "Lebanon": "黎巴嫩",
+  "Lesotho": "莱索托",
+  "Liberia": "利比里亚",
+  "Libya": "利比亚",
+  "Liechtenstein": "列支敦士登",
+  "Lithuania": "立陶宛",
+  "Luxembourg": "卢森堡",
+  "Madagascar": "马达加斯加",
+  "Malawi": "马拉维",
+  "Malaysia": "马来西亚",
+  "Maldives": "马尔代夫",
+  "Mali": "马里",
+  "Malta": "马耳他",
+  "Marshall Islands": "马绍尔群岛",
+  "Mauritania": "毛里塔尼亚",
+  "Mauritius": "毛里求斯",
+  "Mexico": "墨西哥",
+  "Micronesia (Federated States of)": "密克罗尼西亚（联邦国）",
+  "Moldova": "摩尔多瓦",
+  "Monaco": "摩纳哥",
+  "Mongolia": "蒙古",
+  "Montenegro": "黑山",
+  "Morocco": "摩洛哥",
+  "Mozambique": "莫桑比克",
+  "Myanmar": "缅甸",
+  "Namibia": "纳米比亚",
+  "Nauru": "瑙鲁",
+  "Nepal": "尼泊尔",
+  "Netherlands": "荷兰",
+  "New Zealand": "新西兰",
+  "Nicaragua": "尼加拉瓜",
+  "Niger": "尼日尔",
+  "Nigeria": "尼日利亚",
+  "North Macedonia": "北马其顿",
+  "Norway": "挪威",
+  "Oman": "阿曼",
+  "Pakistan": "巴基斯坦",
+  "Palau": "帕劳",
+  "Panama": "巴拿马",
+  "Papua New Guinea": "巴布亚新几内亚",
+  "Paraguay": "巴拉圭",
+  "Peru": "秘鲁",
+  "Philippines": "菲律宾",
+  "Poland": "波兰",
+  "Portugal": "葡萄牙",
+  "Qatar": "卡塔尔",
+  "Romania": "罗马尼亚",
+  "Russia": "俄罗斯",
+  "Rwanda": "卢旺达",
+  "Saint Kitts and Nevis": "圣基茨和尼维斯",
+  "Saint Lucia": "圣卢西亚",
+  "Saint Vincent and the Grenadines": "圣文森特和格林纳丁斯",
+  "Samoa": "萨摩亚",
+  "San Marino": "圣马力诺",
+  "Sao Tome and Principe": "圣多美和普林西比",
+  "Saudi Arabia": "沙特阿拉伯",
+  "Senegal": "塞内加尔",
+  "Serbia": "塞尔维亚",
+  "Seychelles": "塞舌尔",
+  "Sierra Leone": "塞拉利昂",
+  "Singapore": "新加坡",
+  "Slovakia": "斯洛伐克",
+  "Slovenia": "斯洛文尼亚",
+  "Solomon Islands": "所罗门群岛",
+  "Somalia": "索马里",
+  "South Africa": "南非",
+  "South Sudan": "南苏丹",
+  "Spain": "西班牙",
+  "Sri Lanka": "斯里兰卡",
+  "Sudan": "苏丹",
+  "Suriname": "苏里南",
+  "Sweden": "瑞典",
+  "Switzerland": "瑞士",
+  "Syria": "叙利亚",
+  "Taiwan": "台湾",
+  "Tajikistan": "塔吉克斯坦",
+  "Tanzania": "坦桑尼亚",
+  "Thailand": "泰国",
+  "Timor-Leste": "东帝汶",
+  "Togo": "多哥",
+  "Tonga": "汤加",
+  "Trinidad and Tobago": "特立尼达和多巴哥",
+  "Tunisia": "突尼斯",
+  "Turkey": "土耳其",
+  "Turkmenistan": "土库曼斯坦",
+  "Tuvalu": "图瓦卢",
+  "Uganda": "乌干达",
+  "Ukraine": "乌克兰",
+  "United Arab Emirates": "阿联酋",
+  "United Kingdom": "英国",
+  "United States of America": "美国"};
+const gMain = svg.append("g");
+
+d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json").then(worldData=>{
+  countriesData = topojson.feature(worldData, worldData.objects.countries).features;
+  totalCountries = countriesData.length;
+
+  gMain.selectAll("path")
+    .data(countriesData)
+    .enter()
+    .append("path")
+    .attr("d", path)
+    .attr("class","country")
+    .attr("fill","#b0c4de")
+    .attr("stroke","#7f8c8d")
+    .attr("stroke-width",0.5)
+    .on("click",(event,d)=>toggleCountry(d.id.toString(),d))
+    .on("mouseover",(event,d)=>{
+      const name = countryNameMap[d.properties.name]||d.properties.name||"Unknown";
+      tooltip.innerHTML=name;
+      tooltip.style.opacity=1;
+      tooltip.style.left=event.pageX+10+"px";
+      tooltip.style.top=event.pageY-30+"px";
+    })
+    .on("mouseout",()=>{tooltip.style.opacity=0;});
+
+  updateProgress();
+});
+
+function toggleCountry(id,d){
+  const isSmall = path.area(d)<SMALL_COUNTRY_AREA_THRESHOLD;
+  if(visited[id]){
+    delete visited[id];
+    if(isSmall){
+      gMain.selectAll(".dot").filter(function(){ return d3.select(this).attr("data-id")===id; }).remove();
+    } else {
+      gMain.selectAll("path").filter(dd=>dd.id===id).attr("fill","#b0c4de");
+    }
+  } else {
+    visited[id]=true;
+    if(isSmall){
+      const [cx,cy] = path.centroid(d);
+      gMain.append("circle").attr("class","dot").attr("data-id",id).attr("cx",cx).attr("cy",cy).attr("r",4).attr("fill","#ff69b4");
+    } else {
+      gMain.selectAll("path").filter(dd=>dd.id===id).attr("fill","#ff69b4");
+    }
+  }
+  updateProgress();
+}
+
+function updateProgress(){
+  const count = Object.keys(visited).length;
+  const percent = totalCountries>0?Math.round(count/totalCountries*100):0;
+  document.getElementById("progress-bar").style.width=percent+"%";
+  document.getElementById("progress-text").textContent=`已访问国家和地区: ${count} / ${totalCountries} (${percent}%)`;
+}
+
+function doSearch(){
+  const query = document.getElementById("search-input").value.trim().toLowerCase();
+  if(!query) return;
+  const match = countriesData.find(d=>{
+    const en=(d.properties.name||"").toLowerCase();
+    const zh=(countryNameMap[d.properties.name]||"").toLowerCase();
+    return en.includes(query)||zh.includes(query);
+  });
+  if(match) toggleCountry(match.id.toString(),match);
+  else alert("未找到国家或地区，请用英文名称搜索："+query);
+}
+
+document.getElementById("search-btn").addEventListener("click",doSearch);
+document.getElementById("search-input").addEventListener("keydown",e=>{if(e.key==="Enter")doSearch();});
+
+document.getElementById("reset-btn").addEventListener("click", ()=>{
+  visited = {};
+  gMain.selectAll("path").attr("fill","#b0c4de");
+  gMain.selectAll(".dot").remove();
+  updateProgress();
+  document.getElementById("search-input").value = "";
+});
+
+// 缩放控制
+let transformState = d3.zoomIdentity;
+const zoom = d3.zoom()
+  .scaleExtent([0.5,10])
+  .on("zoom", event=>{
+    transformState = event.transform;
+    gMain.attr("transform",`translate(${transformState.x},${transformState.y}) scale(${transformState.k})`);
+  });
+svg.call(zoom);
+document.getElementById("zoom-in").addEventListener("click",()=>svg.transition().duration(500).call(zoom.scaleBy,1.5));
+document.getElementById("zoom-out").addEventListener("click",()=>svg.transition().duration(500).call(zoom.scaleBy,0.7));
+document.getElementById("reset-zoom").addEventListener("click",()=>svg.transition().duration(500).call(zoom.transform,d3.zoomIdentity));
+
+// ✅ 截图功能（进度条左侧圆角、右侧直线）
+document.getElementById("screenshot-btn").addEventListener("click", async ()=>{
+  const svgNode = document.querySelector("#map");
+  const progressContainer = document.getElementById("progress-container");
+  const progressBar = document.getElementById("progress-bar");
+  const progressText = document.getElementById("progress-text");
+
+  const serializer = new XMLSerializer();
+  let source = serializer.serializeToString(svgNode);
+  if(!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)){
+    source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+  }
+  if(!source.match(/^<svg[^>]+"http:\/\/www\.w3\.org\/1999\/xlink"/)){
+    source = source.replace(/^<svg/, '<svg xmlns:xlink="http://www.w3.org/1999/xlink"');
+  }
+
+  const svgWidth = svgNode.clientWidth;
+  const svgHeight = svgNode.clientHeight;
+  source = source.replace('<svg', `<svg width="${svgWidth}" height="${svgHeight}"`);
+
+  const img = new Image();
+  const svgBlob = new Blob([source], {type:"image/svg+xml;charset=utf-8"});
+  const url = URL.createObjectURL(svgBlob);
+
+  img.onload = function(){
+    const canvas = document.createElement("canvas");
+    canvas.width = svgWidth;
+    canvas.height = svgHeight;
+    const ctx = canvas.getContext("2d");
+
+    // 背景
+    ctx.fillStyle = "#dde6f0";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // 绘制SVG地图
+    ctx.drawImage(img,0,0,svgWidth,svgHeight);
+
+    // 绘制进度条
+    const progRect = progressContainer.getBoundingClientRect();
+    const mapRect = svgNode.getBoundingClientRect();
+    const x = (progRect.left - mapRect.left);
+    const y = (progRect.top - mapRect.top);
+    const w = progRect.width;
+    const h = progRect.height;
+    const percent = parseFloat(progressBar.style.width) || 0;
+
+    function roundRect(ctx,x,y,w,h,r,fill){
+      ctx.beginPath();
+      ctx.moveTo(x+r,y);
+      ctx.lineTo(x+w-r,y);
+      ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+      ctx.lineTo(x+w,y+h-r);
+      ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+      ctx.lineTo(x+r,y+h);
+      ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+      ctx.lineTo(x,y+r);
+      ctx.quadraticCurveTo(x,y,x+r,y);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+
+    function roundLeftRect(ctx, x, y, w, h, r, fill){
+      ctx.beginPath();
+      ctx.moveTo(x+r, y);
+      ctx.lineTo(x + w, y);
+      ctx.lineTo(x + w, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+
+    // 灰色背景
+    roundRect(ctx,x,y,w,h,h/2,"#ccc");
+
+    // 填充条（左圆角、右直线）
+    if(percent>0){
+      const grad = ctx.createLinearGradient(x,0,x+w*percent/100,0);
+      grad.addColorStop(0,"#ff9a9e");
+      grad.addColorStop(1,"#fad0c4");
+      roundLeftRect(ctx, x, y, w*percent/100, h, h/2, grad);
+    }
+
+    // 文字
+    ctx.fillStyle = "#000";
+    ctx.font = `${Math.floor(h*0.6)}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(progressText.textContent, x+w/2, y+h/2);
+
+    URL.revokeObjectURL(url);
+
+    const a = document.createElement("a");
+    a.download = "travel_map.png";
+    a.href = canvas.toDataURL("image/png");
+    a.click();
+  };
+  img.src = url;
+});
+
+
+
+
+// ✅ 新增功能：当手机横竖屏切换时，地图自动居中并调整大小
+window.addEventListener("orientationchange", () => {
+  setTimeout(() => {
+    width = svg.node().clientWidth;
+    height = svg.node().clientHeight;
+
+    // 判断当前是否为横屏
+    const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+
+    // 横竖屏使用不同的比例
+    const scaleValue = isLandscape ? 100 : 120; // 横屏时缩小地图
+    const translateY = isLandscape ? height / 1.8 : height / 1.5;
+
+    projection = d3.geoMercator()
+      .scale(scaleValue)
+      .translate([width / 2, translateY]);
+
+    path = d3.geoPath().projection(projection);
+
+    // 更新国家路径
+    gMain.selectAll("path").attr("d", path);
+
+    // 更新小国家圆点位置
+    gMain.selectAll(".dot")
+      .each(function(d) {
+        const id = d3.select(this).attr("data-id");
+        const match = countriesData.find(c => c.id === id);
+        if (match) {
+          const [cx, cy] = path.centroid(match);
+          d3.select(this).attr("cx", cx).attr("cy", cy);
+        }
+      });
+
+    // 重置缩放状态
+    svg.transition().duration(800).call(zoom.transform, d3.zoomIdentity);
+  }, 400); // 等待屏幕旋转完成
+});
+
+</script>
+</body>
+</html>
+
+
+
