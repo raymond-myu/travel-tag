@@ -563,7 +563,9 @@ function toggleUSState(id,d){
     if(isSmall){
       gMain.selectAll(".dot").filter(function(){ return d3.select(this).attr("data-id")===id; }).remove();
     } else {
+      gMain.selectAll(".dot").filter(function(){ return d3.select(this).attr("data-id")===id; }).remove();
       gMain.selectAll("path").filter(dd=>dd.id==d.id).attr("fill","#b0c4de");
+      
     }
   } else {
     visitedUS[id] = true;
@@ -626,10 +628,10 @@ function doSearch(){
     if(match){
       toggleWorldCountry(match.id.toString(), match);
       // zoom to match centroid (smooth)
-      const c = path.centroid(match);
-      if(c && !isNaN(c[0]) && !isNaN(c[1])){
-        svg.transition().duration(700).call(zoom.transform, d3.zoomIdentity.translate(width/2 - c[0]*1, height/2 - c[1]*1).scale(1));
-      }
+      //const c = path.centroid(match);
+      //if(c && !isNaN(c[0]) && !isNaN(c[1])){
+      //  svg.transition().duration(700).call(zoom.transform, d3.zoomIdentity.translate(width/2 - c[0]*1, height/2 - c[1]*1).scale(1));
+      //}
     } else {
       alert("未找到国家或地区，请用正确英文或已映射中文名称搜索：" + q);
     }
@@ -641,10 +643,10 @@ function doSearch(){
     });
     if(match){
       toggleUSState(match.id.toString(), match);
-      const c = path.centroid(match);
-      if(c && !isNaN(c[0]) && !isNaN(c[1])){
-        svg.transition().duration(700).call(zoom.transform, d3.zoomIdentity.translate(width/2 - c[0]*1, height/2 - c[1]*1).scale(1.5));
-      }
+      //const c = path.centroid(match);
+      //if(c && !isNaN(c[0]) && !isNaN(c[1])){
+      //  svg.transition().duration(700).call(zoom.transform, d3.zoomIdentity.translate(width/2 - c[0]*1, height/2 - c[1]*1).scale(1.5));
+      //}
     } else {
       alert("未找到州或地区，请用正确英文或映射中文名称搜索：" + q);
     }
@@ -815,6 +817,5 @@ document.getElementById("search-input").placeholder = "输入国家或地区名�
 </script>
 </body>
 </html>
-
 
 
