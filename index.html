@@ -510,7 +510,7 @@ function renderCurrentMap(){
       .on("mouseout", ()=>{ tooltip.style.opacity = 0; });
 
     // dots for tiny states if any (rare for US)
-    gMain.selectAll(".dot")
+    /*gMain.selectAll(".dot")
       .data(Object.keys(visitedUS))
       .enter()
       .append("circle")
@@ -524,7 +524,7 @@ function renderCurrentMap(){
         }
       })
       .attr("r",4)
-      .attr("fill","#ff69b4");
+      .attr("fill","#ff69b4");*/
 
     document.getElementById("page-title").textContent = "我的旅行足迹地图（美国）";
     document.getElementById("search-input").placeholder = "输入州或地区名搜索";
@@ -815,4 +815,5 @@ document.getElementById("search-input").placeholder = "输入国家或地区名�
 </script>
 </body>
 </html>
+
 
